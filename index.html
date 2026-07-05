@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<meta name="color-scheme" content="light only">
+<meta name="theme-color" content="#0E4C86">
+<title>Calici sotto le mura — Gestione Bottiglie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: light only;
+    --wine:#6E1E3C;
+    --wine-dark:#3E1024;
+    --wine-light:#8C3157;
+    --gold:#B9862E;
+    --gold-light:#E4C77A;
+    --brand-blue:#0E4C86;
+    --brand-blue-dark:#0A3762;
+    --cream:#EAF2FA;
+    --paper:#FFFFFF;
+    --charcoal:#2B2622;
+    --muted:#8A7F74;
+    --border:#DCE6F0;
+    --green:#3B7A57;
+    --green-bg:#E9F2EC;
+    --red:#B23A2E;
+    --red-bg:#FBEAE7;
+    --amber-bg:#FBF2DF;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;color-scheme:light only;}
+  body{
+    font-family:'Inter',sans-serif;
+    background:var(--cream);
+    color:var(--charcoal);
+    min-height:100vh;
+    -webkit-tap-highlight-color:transparent;
+  }
+  h1,h2,h3,.display{font-family:'Fraunces',serif;}
+  #app{min-height:100vh;display:flex;flex-direction:column;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select{font-family:inherit;}
+  .screen{flex:1;display:flex;flex-direction:column;padding:20px;max-width:640px;margin:0 auto;width:100%;}
+  .screen.wide{max-width:1000px;}
+
+  .vine-divider{display:flex;align-items:center;gap:6px;justify-content:center;margin:18px 0;opacity:.55;}
+  .vine-divider span{width:5px;height:5px;border-radius:50%;background:var(--wine);}
+  .vine-divider span:nth-child(2){background:var(--gold);width:7px;height:7px;}
+
+  .home-hero{text-align:center;padding:56px 10px 28px;}
+  .home-hero .eyebrow{letter-spacing:.14em;text-transform:uppercase;font-size:12px;color:var(--gold);font-weight:700;}
+  .home-hero h1{font-size:36px;font-weight:700;margin:10px 0 6px;color:var(--wine-dark);}
+  .home-hero p{color:var(--muted);font-size:15px;margin:0;}
+  .home-cards{display:flex;flex-direction:column;gap:16px;padding:10px 4px 40px;}
+  .home-card{
+    background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);
+    padding:26px 22px;text-align:left;display:flex;align-items:center;gap:18px;
+    box-shadow:0 2px 10px rgba(14,76,134,.07);transition:transform .15s ease;
+  }
+  .home-card:active{transform:scale(.98);}
+  .home-card .icon{
+    width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:26px;flex-shrink:0;
+  }
+  .home-card.casetta .icon{background:var(--wine);color:var(--gold-light);}
+  .home-card.gestore .icon{background:var(--brand-blue);color:#fff;}
+  .home-card .txt strong{display:block;font-family:'Fraunces',serif;font-size:19px;color:var(--charcoal);}
+  .home-card .txt span{color:var(--muted);font-size:13px;}
+
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px;}
+  .field input, .field select{
+    width:100%;padding:14px 15px;border-radius:12px;border:1.5px solid var(--border);
+    font-size:16px;background:var(--paper);color:var(--charcoal);
+  }
+  .field input:focus, .field select:focus{outline:2px solid var(--wine-light);border-color:var(--wine-light);}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:15px 20px;border-radius:12px;border:none;font-weight:700;font-size:16px;width:100%;
+  }
+  .btn-primary{background:var(--wine);color:#fff;}
+  .btn-primary:active{background:var(--wine-dark);}
+  .btn-dark{background:var(--brand-blue);color:#fff;}
+  .btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--charcoal);}
+  .btn-sm{padding:9px 14px;font-size:13px;width:auto;border-radius:9px;}
+  .btn-danger{background:var(--red);color:#fff;}
+  .btn-ghost{background:transparent;color:var(--muted);border:none;font-size:13px;text-decoration:underline;padding:6px;width:auto;}
+  .error-msg{background:var(--red-bg);color:var(--red);padding:10px 14px;border-radius:10px;font-size:14px;margin-bottom:14px;font-weight:600;}
+  .info-msg{background:var(--amber-bg);color:#8A5A00;padding:10px 14px;border-radius:10px;font-size:13.5px;margin-bottom:14px;font-weight:600;}
+  .back-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .back-link{color:var(--muted);font-size:14px;font-weight:600;background:none;border:none;padding:6px 0;}
+
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;padding:16px 20px;
+    background:var(--wine);color:#fff;position:sticky;top:0;z-index:5;
+  }
+  .topbar.dark{background:var(--brand-blue-dark);}
+  .topbar .tb-title{font-family:'Fraunces',serif;font-size:18px;font-weight:600;}
+  .topbar .tb-sub{font-size:12px;opacity:.8;}
+  .topbar button{background:rgba(255,255,255,.15);color:#fff;border:none;padding:8px 12px;border-radius:9px;font-size:12px;font-weight:600;}
+
+  .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px;}
+  .cat-card{
+    background:var(--paper);border:1px solid var(--border);border-radius:var(--radius);
+    padding:28px 12px;text-align:center;font-weight:700;font-family:'Fraunces',serif;font-size:18px;
+  }
+  .cat-card .emoji{font-size:34px;display:block;margin-bottom:10px;}
+  .cat-card.vino{color:var(--wine-dark);}
+  .cat-card.birra{color:#8A5A00;}
+
+  .casetta-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;}
+  .casetta-pick{
+    background:var(--paper);border:1px solid var(--border);border-radius:12px;
+    padding:16px 10px;text-align:center;font-weight:700;font-size:14.5px;
+  }
+
+  .content{padding:16px 16px 90px;flex:1;max-width:640px;margin:0 auto;width:100%;}
+  .content.wide{max-width:1000px;}
+  .product-card{
+    background:var(--paper);border:1px solid var(--border);border-radius:14px;
+    padding:16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  }
+  .product-card .pname{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--charcoal);margin:0 0 6px;}
+  .product-card .stats{display:flex;gap:14px;font-size:12.5px;color:var(--muted);}
+  .product-card .stats b{color:var(--charcoal);font-size:14px;}
+  .stat-residue.low b{color:var(--red);}
+  .stat-residue.ok b{color:var(--green);}
+  .btn-finish{
+    background:var(--wine);color:#fff;border:none;border-radius:11px;padding:12px 16px;font-weight:700;
+    font-size:13.5px;white-space:nowrap;flex-shrink:0;
+  }
+  .confirm-box{
+    background:var(--amber-bg);border:1px solid var(--gold);border-radius:14px;padding:14px;margin-bottom:12px;
+  }
+  .confirm-box p{margin:0 0 10px;font-weight:600;font-size:14.5px;}
+  .confirm-row{display:flex;gap:10px;}
+  .confirm-row button{flex:1;padding:11px;border-radius:9px;border:none;font-weight:700;}
+
+  .coupon-link{
+    display:block;text-align:center;color:var(--muted);font-size:13px;margin-top:8px;
+    text-decoration:underline;background:none;border:none;padding:10px;width:100%;
+  }
+
+  .menu-list{display:flex;flex-direction:column;gap:14px;padding-top:6px;}
+  .menu-card{
+    background:var(--paper);border:1px solid var(--border);border-radius:14px;
+    padding:20px;text-align:left;display:flex;align-items:center;gap:16px;
+  }
+  .menu-card .icon{width:46px;height:46px;border-radius:50%;background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+  .menu-card strong{display:block;font-family:'Fraunces',serif;font-size:17px;color:var(--charcoal);}
+  .menu-card span{color:var(--muted);font-size:12.5px;}
+
+  .section-title{font-family:'Fraunces',serif;font-size:20px;margin:6px 0 14px;color:var(--wine-dark);}
+  .card{background:var(--paper);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;}
+  .casetta-block-title{font-weight:700;font-size:14px;color:var(--wine-dark);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+  .prod-edit-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+  .prod-edit-row input{flex:1;padding:9px 10px;border-radius:8px;border:1px solid var(--border);font-size:14px;}
+  .icon-btn{background:var(--red-bg);color:var(--red);border:none;border-radius:8px;width:32px;height:32px;font-weight:700;flex-shrink:0;}
+  .add-prod-btn{background:var(--green-bg);color:var(--green);border:none;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:700;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--border);}
+  th{color:var(--muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;}
+  .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+  .badge.vino{background:#F3E3EA;color:var(--wine-dark);}
+  .badge.birra{background:#FBF0D9;color:#8A5A00;}
+  .filters{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .filters select{padding:9px 12px;border-radius:9px;border:1px solid var(--border);font-size:13px;background:#fff;}
+  .load-input-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:10px;}
+  .load-input-row .lbl{flex:1;}
+  .load-input-row .lbl .already{display:block;font-size:11.5px;color:var(--muted);}
+  .load-input-row input{width:80px;padding:9px;border-radius:8px;border:1px solid var(--border);font-size:15px;text-align:center;}
+  .empty-note{color:var(--muted);font-size:13.5px;text-align:center;padding:30px 10px;}
+  .ricarica-tag{background:var(--gold);color:#fff;font-size:10.5px;padding:2px 8px;border-radius:20px;margin-left:8px;font-weight:700;}
+  .summary-strip{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+  .summary-strip .box{flex:1;min-width:100px;background:var(--paper);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;}
+  .summary-strip .box b{display:block;font-size:22px;font-family:'Fraunces',serif;color:var(--wine-dark);}
+  .summary-strip .box span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+  .loading-full{display:flex;align-items:center;justify-content:center;min-height:100vh;color:var(--muted);font-size:14px;text-align:center;padding:30px;}
+  .lowstock-box{background:var(--red-bg);border:1px solid #E9B9AF;border-radius:14px;padding:16px;margin-bottom:18px;}
+  .lowstock-box h3{margin:0 0 10px;font-size:14.5px;color:var(--red);font-family:'Fraunces',serif;}
+  .lowstock-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #E9B9AF;font-size:13.5px;}
+  .lowstock-row:last-child{border-bottom:none;}
+  .lowstock-row b{color:var(--red);}
+  .setup-box{background:var(--paper);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:520px;margin:40px auto;}
+  .setup-box h2{color:var(--wine-dark);margin-top:0;}
+  .setup-box code{background:var(--cream);padding:2px 6px;border-radius:6px;font-size:13px;}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading-full">Caricamento…</div></div>
+
+<script>
+/* =========================================================================
+   CONFIGURAZIONE BASE
+   ========================================================================= */
+const EVENT_NAME = "Calici sotto le mura";
+const PW_CASETTA = "Calici";
+const PW_GESTORE = "Peggiori";
+const SESSION_HOURS = 8;
+const DEFAULT_PRODUCTS_PER_CASETTA = 5;
+
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwCOWQwGJlaJKY_wkam-B3OAPLDqiwl8mbHewMRUn8G_NLzzF5kbmW10DTFmgajb8CH/exec";
+
+const VINO_NAMES = ['Vignalta','Cà Rovere','Assetati','Carezze','Ongaresca','Rossi','Bolle','Bianchi','Rosè'];
+const BIRRA_NAMES = ['Nebula','Busa dei briganti'];
+
+const DAYS = [
+  { id:'w1v', date:'2026-07-24', label:'Venerdì 24/07 — Weekend 1',  ricarica:false },
+  { id:'w1s', date:'2026-07-25', label:'Sabato 25/07 — Weekend 1',   ricarica:false },
+  { id:'w1d', date:'2026-07-26', label:'Domenica 26/07 — Weekend 1', ricarica:false },
+  { id:'w2v', date:'2026-07-31', label:'Venerdì 31/07 — Weekend 2',  ricarica:true  },
+  { id:'w2s', date:'2026-08-01', label:'Sabato 01/08 — Weekend 2',   ricarica:false },
+  { id:'w2d', date:'2026-08-02', label:'Domenica 02/08 — Weekend 2', ricarica:false },
+];
+function dayWindow(day){
+  const parts = day.date.split('-').map(Number);
+  const start = new Date(parts[0], parts[1]-1, parts[2], 18, 0, 0, 0);
+  const end   = new Date(parts[0], parts[1]-1, parts[2], 27, 0, 0, 0);
+  return { start: start, end: end };
+}
+function getDayIdForTimestamp(ts){
+  for(let i=0;i<DAYS.length;i++){
+    const day = DAYS[i];
+    const w = dayWindow(day);
+    if(ts >= w.start.getTime() && ts < w.end.getTime()) return day.id;
+  }
+  return null;
+}
+function getDayIdsForGroup(groupId){
+  if(groupId === 'weekend1') return ['w1v','w1s','w1d'];
+  if(groupId === 'weekend2') return ['w2v','w2s','w2d'];
+  if(groupId === 'totale') return DAYS.map(function(d){ return d.id; });
+  return [groupId];
+}
+function groupLabel(groupId){
+  if(groupId === 'weekend1') return 'Weekend 1 — Totale';
+  if(groupId === 'weekend2') return 'Weekend 2 — Totale';
+  if(groupId === 'totale') return 'Totale Evento';
+  const d = DAYS.find(function(x){ return x.id===groupId; });
+  return d ? d.label : groupId;
+}
+
+/* =========================================================================
+   STORAGE LAYER — Google Apps Script (nessun account richiesto)
+   ========================================================================= */
+function wait(ms){ return new Promise(function(res){ setTimeout(res, ms); }); }
+function storageConfigured(){ return APPS_SCRIPT_URL && APPS_SCRIPT_URL.indexOf('INSERISCI_QUI') === -1; }
+
+async function storeGet(key){
+  if(!storageConfigured()) return null;
+  try{
+    const res = await fetch(APPS_SCRIPT_URL + '?key=' + encodeURIComponent(key));
+    const data = await res.json();
+    return (data && data.value != null) ? data.value : null;
+  }catch(e){ console.error('storeGet error', e); return null; }
+}
+async function storeSet(key, value){
+  if(!storageConfigured()) return;
+  const attempts = 3;
+  for(let i=0;i<attempts;i++){
+    try{
+      await fetch(APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify({action:'set', key:key, value:value}) });
+      return;
+    }catch(e){
+      console.error('storeSet error (tentativo '+(i+1)+'/'+attempts+')', e);
+      if(i<attempts-1) await wait(500*(i+1));
+    }
+  }
+}
+
+function getLocalSession(){
+  try{ const raw = localStorage.getItem('cb_session_casetta'); return raw ? JSON.parse(raw) : null; }
+  catch(e){ return null; }
+}
+function saveLocalSession(s){ try{ localStorage.setItem('cb_session_casetta', JSON.stringify(s)); }catch(e){} }
+function clearLocalSession(){ try{ localStorage.removeItem('cb_session_casetta'); }catch(e){} }
+
+function defaultConfig(){
+  function mk(prefix, names){
+    return names.map(function(name, i){
+      return {
+        id: prefix+(i+1),
+        name: name,
+        products: Array.from({length:DEFAULT_PRODUCTS_PER_CASETTA}, function(_,j){
+          return { id: prefix+(i+1)+'_p'+(j+1), name: (prefix==='v' ? 'Vino ' : 'Birra ') + (j+1) };
+        })
+      };
+    });
+  }
+  return { vino: mk('v', VINO_NAMES), birra: mk('b', BIRRA_NAMES) };
+}
+
+async function getConfig(){
+  const raw = await storeGet('config');
+  if(raw){ try{ return JSON.parse(raw); }catch(e){} }
+  const def = defaultConfig();
+  await storeSet('config', JSON.stringify(def));
+  return def;
+}
+async function saveConfig(cfg){ await storeSet('config', JSON.stringify(cfg)); }
+
+async function getLoads(){
+  const raw = await storeGet('loads');
+  if(raw){ try{ return JSON.parse(raw); }catch(e){} }
+  return {};
+}
+async function saveLoads(loads){ await storeSet('loads', JSON.stringify(loads)); }
+
+async function getLoadsLog(){
+  const raw = await storeGet('loadsLog');
+  if(raw){ try{ return JSON.parse(raw); }catch(e){} }
+  return [];
+}
+async function saveLoadsLog(l){ await storeSet('loadsLog', JSON.stringify(l)); }
+
+async function getLog(){
+  const raw = await storeGet('log');
+  if(raw){ try{ return JSON.parse(raw); }catch(e){} }
+  return [];
+}
+async function saveLog(log){ await storeSet('log', JSON.stringify(log)); }
+
+async function getCoupons(){
+  const raw = await storeGet('coupons');
+  if(raw){ try{ return JSON.parse(raw); }catch(e){} }
+  return {};
+}
+async function saveCoupons(c){ await storeSet('coupons', JSON.stringify(c)); }
+
+/* =========================================================================
+   STATO GLOBALE
+   ========================================================================= */
+const state = {
+  screen: 'loading',
+  config: null,
+  loads: null,
+  loadsLog: null,
+  log: null,
+  coupons: null,
+  casettaSession: null,
+  gestoreAuthed: false,
+  ui: {
+    catChoice: null,
+    confirmProductId: null,
+    couponDay: DAYS[0].id,
+    loadCasettaId: null,
+    loadDayId: DAYS[0].id,
+    giornoGroupId: DAYS[0].id,
+    logFilterCat: 'all',
+    logFilterCasetta: 'all',
+    loginError: '',
+    tempName: ''
+  }
+};
+
+function findCasetta(categoria, casettaId){
+  return (state.config[categoria]||[]).find(function(c){ return c.id===casettaId; });
+}
+function allCasette(){
+  return state.config.vino.map(function(c){ return Object.assign({}, c, {categoria:'vino'}); })
+    .concat(state.config.birra.map(function(c){ return Object.assign({}, c, {categoria:'birra'}); }));
+}
+function unitFor(categoria){
+  return categoria === 'birra'
+    ? { sing:'fusto', plur:'fusti', adj:'finito', btn:'Segna fusto finito' }
+    : { sing:'bottiglia', plur:'bottiglie', adj:'finita', btn:'Segna bottiglia finita' };
+}
+function totalLoaded(casettaId, productId){
+  let total = 0;
+  const byDay = state.loads[casettaId] || {};
+  Object.keys(byDay).forEach(function(dayId){
+    const v = byDay[dayId] && byDay[dayId][productId];
+    if(typeof v === 'number') total += v;
+  });
+  return total;
+}
+function totalFinished(casettaId, productId){
+  return state.log.filter(function(l){ return l.casettaId===casettaId && l.productId===productId; }).length;
+}
+function fmtDateTime(ts){
+  const d = new Date(ts);
+  return d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'}) + ' · ' + d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+}
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+function escapeAttr(s){ return escapeHtml(s); }
+
+/* =========================================================================
+   RENDER
+   ========================================================================= */
+const app = document.getElementById('app');
+
+function render(){
+  if(!storageConfigured()){
+    app.innerHTML = renderSetupNeeded();
+    return;
+  }
+  let html = '';
+  switch(state.screen){
+    case 'loading': html = '<div class="loading-full">Caricamento…</div>'; break;
+    case 'home': html = renderHome(); break;
+    case 'casetta_login': html = renderCasettaLogin(); break;
+    case 'casetta_category': html = renderCasettaCategory(); break;
+    case 'casetta_select': html = renderCasettaSelect(); break;
+    case 'casetta_view': html = renderCasettaView(); break;
+    case 'casetta_coupon': html = renderCasettaCoupon(); break;
+    case 'gestore_login': html = renderGestoreLogin(); break;
+    case 'gestore_menu': html = renderGestoreMenu(); break;
+    case 'gestore_config': html = wrapGestoreSection('🏷️ Casette & Prodotti', renderGestoreConfig()); break;
+    case 'gestore_carico': html = wrapGestoreSection('🧾 Carico Giornaliero', renderGestoreCarico()); break;
+    case 'gestore_giorno': html = wrapGestoreSection('📊 Vendite', renderGestoreVenditeGiorno()); break;
+    case 'gestore_riepilogo': html = wrapGestoreSection('📦 Scorte', renderGestoreRiepilogo()); break;
+    case 'gestore_coupon': html = wrapGestoreSection('🎟️ Coupon', renderGestoreCoupon()); break;
+    case 'gestore_log': html = wrapGestoreSection('📜 Registro', renderGestoreLog()); break;
+    default: html = '<div class="loading-full">Schermata non trovata</div>';
+  }
+  app.innerHTML = html;
+}
+
+function renderSetupNeeded(){
+  return '<div class="setup-box"><h2>Configurazione richiesta</h2>' +
+    '<p>Questa app ha bisogno di un piccolo archivio dati gratuito (Google Sheet + Apps Script) per salvare le informazioni condivise tra tutte le casette.</p>' +
+    '<p>Sostituisci il valore della costante <code>APPS_SCRIPT_URL</code> nel codice con l\'URL del tuo Web App di Google Apps Script.</p></div>';
+}
+
+function renderHome(){
+  return `
+  <div class="screen">
+    <div class="home-hero">
+      <div class="eyebrow">${EVENT_NAME}</div>
+      <h1>Gestione Bottiglie</h1>
+      <p>Registra le bottiglie finite e tieni sotto controllo le scorte, casetta per casetta.</p>
+    </div>
+    <div class="vine-divider"><span></span><span></span><span></span></div>
+    <div class="home-cards">
+      <button class="home-card casetta" data-action="go-casetta-login">
+        <div class="icon">🍇</div>
+        <div class="txt"><strong>Sono in Casetta</strong><span>Segna le bottiglie finite durante il servizio</span></div>
+      </button>
+      <button class="home-card gestore" data-action="go-gestore-login">
+        <div class="icon">📋</div>
+        <div class="txt"><strong>Sono il Gestore</strong><span>Carico scorte, riepiloghi e coupon</span></div>
+      </button>
+    </div>
+  </div>`;
+}
+
+function renderCasettaLogin(){
+  return `
+  <div class="screen">
+    <div class="back-row"><button class="back-link" data-action="go-home">← Indietro</button></div>
+    <h2 class="display" style="color:var(--wine-dark);">Accesso Casetta</h2>
+    <p style="color:var(--muted);font-size:14px;margin-top:-8px;">Inserisci il tuo nome e la password. Resterai collegato per ${SESSION_HOURS} ore.</p>
+    ${state.ui.loginError ? `<div class="error-msg">${state.ui.loginError}</div>` : ''}
+    <div class="field">
+      <label>Il tuo nome</label>
+      <input type="text" id="input-casetta-name" placeholder="Nome e cognome" autofocus>
+    </div>
+    <div class="field">
+      <label>Password casetta</label>
+      <input type="password" id="input-casetta-pw" placeholder="Password">
+    </div>
+    <button class="btn btn-primary" data-action="submit-casetta-login">Entra</button>
+  </div>`;
+}
+
+function renderCasettaCategory(){
+  return `
+  <div class="screen">
+    <div class="back-row"><button class="back-link" data-action="go-home">← Indietro</button></div>
+    <h2 class="display" style="color:var(--wine-dark);">Ciao ${escapeHtml(state.ui.tempName||'')}!</h2>
+    <p style="color:var(--muted);font-size:14px;margin-top:-8px;">In che tipo di casetta lavori stasera?</p>
+    <div class="cat-grid">
+      <button class="cat-card vino" data-action="pick-cat" data-cat="vino"><span class="emoji">🍷</span>Vino</button>
+      <button class="cat-card birra" data-action="pick-cat" data-cat="birra"><span class="emoji">🍺</span>Birra</button>
+    </div>
+  </div>`;
+}
+
+function renderCasettaSelect(){
+  const list = state.config[state.ui.catChoice] || [];
+  return `
+  <div class="screen">
+    <div class="back-row"><button class="back-link" data-action="go-casetta-category">← Indietro</button></div>
+    <h2 class="display" style="color:var(--wine-dark);">Quale casetta?</h2>
+    <div class="casetta-grid">
+      ${list.map(function(c){ return `<button class="casetta-pick" data-action="pick-casetta" data-id="${c.id}">${escapeHtml(c.name)}</button>`; }).join('')}
+    </div>
+  </div>`;
+}
+
+function renderCasettaView(){
+  const s = state.casettaSession;
+  const casetta = findCasetta(s.categoria, s.casettaId);
+  if(!casetta){
+    return `<div class="screen"><p>Casetta non trovata. <button class="btn btn-outline" data-action="logout-casetta">Torna al login</button></p></div>`;
+  }
+  const icon = s.categoria==='vino' ? '🍷' : '🍺';
+  const u = unitFor(s.categoria);
+  const rows = casetta.products.map(function(p){
+    const loaded = totalLoaded(casetta.id, p.id);
+    const finished = totalFinished(casetta.id, p.id);
+    const residue = loaded - finished;
+    const isConfirming = state.ui.confirmProductId === p.id;
+    const residueClass = loaded===0 ? '' : (residue<=2 ? 'low' : 'ok');
+    return `
+    <div class="product-card">
+      <div>
+        <p class="pname">${escapeHtml(p.name)}</p>
+        <div class="stats">
+          <span>Finiti&nbsp;<b>${finished}</b></span>
+          <span class="stat-residue ${residueClass}">Residui&nbsp;<b>${loaded===0 ? '—' : residue}</b></span>
+        </div>
+      </div>
+      <button class="btn-finish" data-action="ask-finish" data-pid="${p.id}">${u.btn}</button>
+    </div>
+    ${isConfirming ? `
+    <div class="confirm-box">
+      <p>Confermi: <em>${escapeHtml(p.name)}</em> ${u.adj}?</p>
+      <div class="confirm-row">
+        <button class="btn-outline" data-action="cancel-finish">No</button>
+        <button class="btn-primary" data-action="confirm-finish" data-pid="${p.id}">Sì, conferma</button>
+      </div>
+    </div>` : ''}
+    `;
+  }).join('');
+
+  return `
+  <div class="topbar">
+    <div>
+      <div class="tb-title">${icon} ${escapeHtml(casetta.name)}</div>
+      <div class="tb-sub">${escapeHtml(s.name)}</div>
+    </div>
+    <button data-action="logout-casetta">Esci</button>
+  </div>
+  <div class="content">
+    ${rows}
+    <button class="coupon-link" data-action="go-coupon">🎟️ Registra coupon venduti (fine serata)</button>
+  </div>`;
+}
+
+function renderCasettaCoupon(){
+  const s = state.casettaSession;
+  const casetta = findCasetta(s.categoria, s.casettaId);
+  const existing = (state.coupons[casetta.id] && state.coupons[casetta.id][state.ui.couponDay]) || null;
+  return `
+  <div class="topbar">
+    <div><div class="tb-title">🎟️ Coupon</div><div class="tb-sub">${escapeHtml(casetta.name)}</div></div>
+    <button data-action="go-casetta-view-back">Chiudi</button>
+  </div>
+  <div class="content">
+    <div class="field">
+      <label>Serata</label>
+      <select id="coupon-day-select">
+        ${DAYS.map(function(d){ return `<option value="${d.id}" ${d.id===state.ui.couponDay?'selected':''}>${d.label}</option>`; }).join('')}
+      </select>
+    </div>
+    <div class="field">
+      <label>Numero coupon venduti</label>
+      <input type="number" inputmode="numeric" min="0" id="coupon-count-input" value="${existing ? existing.count : ''}" placeholder="0">
+    </div>
+    ${existing ? `<p style="color:var(--muted);font-size:12.5px;">Ultimo salvataggio: ${existing.count} coupon, da ${escapeHtml(existing.person)} — ${fmtDateTime(existing.ts)}</p>` : ''}
+    <button class="btn btn-primary" data-action="save-coupon">Salva coupon</button>
+  </div>`;
+}
+
+function renderGestoreLogin(){
+  return `
+  <div class="screen">
+    <div class="back-row"><button class="back-link" data-action="go-home">← Indietro</button></div>
+    <h2 class="display" style="color:var(--wine-dark);">Accesso Gestore</h2>
+    ${state.ui.loginError ? `<div class="error-msg">${state.ui.loginError}</div>` : ''}
+    <div class="field">
+      <label>Password gestore</label>
+      <input type="password" id="input-gestore-pw" placeholder="Password">
+    </div>
+    <button class="btn btn-dark" data-action="submit-gestore-login">Entra</button>
+  </div>`;
+}
+
+function renderGestoreMenu(){
+  const items = [
+    ['config','🏷️','Casette & Prodotti','Rinomina casette e prodotti'],
+    ['carico','🧾','Carico Giornaliero','Aggiungi bottiglie/fusti caricati'],
+    ['giorno','📊','Vendite','Per giornata, weekend o totale evento'],
+    ['riepilogo','📦','Scorte','Residui e scorte più basse'],
+    ['coupon','🎟️','Coupon','Totali per casetta e serata'],
+    ['log','📜','Registro','Ogni bottiglia segnata, da chi e quando']
+  ];
+  return `
+  <div class="topbar dark">
+    <div><div class="tb-title">📋 Gestore</div><div class="tb-sub">${EVENT_NAME}</div></div>
+    <button data-action="logout-gestore">Esci</button>
+  </div>
+  <div class="screen wide">
+    <div class="menu-list">
+      ${items.map(function(item){
+        return `<button class="menu-card" data-action="go-gestore-section" data-section="${item[0]}">
+          <div class="icon">${item[1]}</div>
+          <div><strong>${item[2]}</strong><span>${item[3]}</span></div>
+        </button>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function wrapGestoreSection(title, innerHtml){
+  return `
+  <div class="topbar dark">
+    <div><div class="tb-title">${title}</div><div class="tb-sub">${EVENT_NAME}</div></div>
+    <button data-action="go-gestore-menu">← Menu</button>
+  </div>
+  <div class="content wide">${innerHtml}</div>`;
+}
+
+function renderGestoreConfig(){
+  function block(categoria, label){
+    return `<h3 class="section-title" style="font-size:16px;">${label}</h3>` +
+      state.config[categoria].map(function(c){
+        return `<div class="card">
+          <div class="casetta-block-title">
+            <input type="text" value="${escapeAttr(c.name)}" data-action="edit-casetta-name" data-cat="${categoria}" data-id="${c.id}"
+              style="border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-weight:700;font-size:14px;width:60%;">
+            <span style="color:var(--muted);font-size:12px;">${c.products.length} prodotti</span>
+          </div>
+          ${c.products.map(function(p){
+            return `<div class="prod-edit-row">
+              <input type="text" value="${escapeAttr(p.name)}" data-action="edit-product-name" data-cat="${categoria}" data-cid="${c.id}" data-pid="${p.id}">
+              <button class="icon-btn" data-action="remove-product" data-cat="${categoria}" data-cid="${c.id}" data-pid="${p.id}" title="Rimuovi">✕</button>
+            </div>`;
+          }).join('')}
+          <button class="add-prod-btn" data-action="add-product" data-cat="${categoria}" data-cid="${c.id}">+ Aggiungi prodotto</button>
+        </div>`;
+      }).join('');
+  }
+  return `
+    <p style="color:var(--muted);font-size:13.5px;margin-top:-4px;">Rinomina casette e prodotti. Le modifiche si salvano automaticamente.</p>
+    ${block('vino','🍷 Vino (9 casette)')}
+    ${block('birra','🍺 Birra (2 casette)')}
+  `;
+}
+
+function renderGestoreCarico(){
+  const casette = allCasette();
+  const selId = state.ui.loadCasettaId || casette[0].id;
+  const casetta = casette.find(function(c){ return c.id===selId; });
+  const dayId = state.ui.loadDayId;
+  const day = DAYS.find(function(d){ return d.id===dayId; });
+  const currentLoads = (state.loads[casetta.id] && state.loads[casetta.id][dayId]) || {};
+  const u = unitFor(casetta.categoria);
+
+  const recentLog = state.loadsLog
+    .filter(function(l){ return l.casettaId===casetta.id; })
+    .sort(function(a,b){ return b.ts-a.ts; })
+    .slice(0,8);
+
+  return `
+    <p class="info-msg">💡 Ogni volta che inserisci un numero e premi "Aggiungi al carico", quella quantità si <strong>somma</strong> a quanto già caricato quel giorno (non lo sostituisce). Usa questa sezione sia per il carico iniziale che per le ricariche durante la serata. Il giorno dopo inserisci solo le bottiglie/fusti nuovi che porti: i residui si calcolano da soli sommando tutti i giorni.</p>
+    <div class="field">
+      <label>Casetta</label>
+      <select id="load-casetta-select">
+        <optgroup label="Vino">
+          ${state.config.vino.map(function(c){ return `<option value="${c.id}" ${c.id===selId?'selected':''}>${escapeHtml(c.name)}</option>`; }).join('')}
+        </optgroup>
+        <optgroup label="Birra">
+          ${state.config.birra.map(function(c){ return `<option value="${c.id}" ${c.id===selId?'selected':''}>${escapeHtml(c.name)}</option>`; }).join('')}
+        </optgroup>
+      </select>
+    </div>
+    <div class="field">
+      <label>Serata</label>
+      <select id="load-day-select">
+        ${DAYS.map(function(d){ return `<option value="${d.id}" ${d.id===dayId?'selected':''}>${d.label}${d.ricarica?' (ricarica)':''}</option>`; }).join('')}
+      </select>
+    </div>
+    ${day.ricarica ? `<p class="info-msg">🔄 Ricarica scorte: i frigo sono stati svuotati tra i due weekend.</p>` : ''}
+    <div class="card">
+      ${casetta.products.map(function(p){
+        return `<div class="load-input-row">
+          <span class="lbl">${escapeHtml(p.name)}<span class="already">Già caricate oggi: ${currentLoads[p.id]||0} ${u.plur}</span></span>
+          <input type="number" min="0" inputmode="numeric" id="load-add-${p.id}" placeholder="+0">
+        </div>`;
+      }).join('')}
+    </div>
+    <button class="btn btn-primary" data-action="add-load" data-cid="${casetta.id}" data-day="${dayId}">Aggiungi al carico</button>
+
+    ${recentLog.length ? `
+    <h3 class="section-title" style="font-size:15px;margin-top:22px;">Ultimi carichi — ${escapeHtml(casetta.name)}</h3>
+    <div class="card" style="padding:0;">
+      <table>
+        <thead><tr><th>Quando</th><th>Prodotto</th><th>Quantità</th></tr></thead>
+        <tbody>
+          ${recentLog.map(function(l){ return `<tr><td>${fmtDateTime(l.ts)}</td><td>${escapeHtml(l.productName)}</td><td>+${l.qty}</td></tr>`; }).join('')}
+        </tbody>
+      </table>
+    </div>` : ''}
+  `;
+}
+
+function renderGestoreVenditeGiorno(){
+  const groupId = state.ui.giornoGroupId;
+  const dayIds = getDayIdsForGroup(groupId);
+  const singleDay = dayIds.length===1 ? DAYS.find(function(d){ return d.id===dayIds[0]; }) : null;
+
+  const entries = state.log.filter(function(l){ return dayIds.indexOf(getDayIdForTimestamp(l.ts)) !== -1; });
+  const totalBottiglie = entries.filter(function(e){ return e.categoria==='vino'; }).length;
+  const totalFusti = entries.filter(function(e){ return e.categoria==='birra'; }).length;
+  let couponTotal = 0;
+  allCasette().forEach(function(c){
+    dayIds.forEach(function(dId){
+      const e = state.coupons[c.id] && state.coupons[c.id][dId];
+      if(e) couponTotal += e.count;
+    });
+  });
+
+  function block(categoria, label){
+    const u = unitFor(categoria);
+    const cs = state.config[categoria];
+    const rows = cs.map(function(c){
+      const prodRows = c.products.map(function(p){
+        const count = entries.filter(function(e){ return e.casettaId===c.id && e.productId===p.id; }).length;
+        return count>0 ? `<tr><td>${escapeHtml(p.name)}</td><td>${count}</td></tr>` : '';
+      }).join('');
+      const casettaTotal = c.products.reduce(function(sum,p){
+        return sum + entries.filter(function(e){ return e.casettaId===c.id && e.productId===p.id; }).length;
+      }, 0);
+      if(casettaTotal===0) return `<div class="card"><div class="casetta-block-title"><span>${escapeHtml(c.name)}</span><span style="color:var(--muted);">0 ${u.plur}</span></div></div>`;
+      return `<div class="card">
+        <div class="casetta-block-title"><span>${escapeHtml(c.name)}</span><span style="font-weight:700;">${casettaTotal} ${u.plur}</span></div>
+        <table><thead><tr><th>Prodotto</th><th>${u.plur.charAt(0).toUpperCase()+u.plur.slice(1)} venduti</th></tr></thead>
+        <tbody>${prodRows}</tbody></table>
+      </div>`;
+    }).join('');
+    return `<h3 class="section-title" style="font-size:16px;">${label}</h3>${rows}`;
+  }
+
+  return `
+    <div class="field">
+      <label>Periodo</label>
+      <select id="giorno-day-select">
+        <optgroup label="Singole giornate">
+          ${DAYS.map(function(d){ return `<option value="${d.id}" ${d.id===groupId?'selected':''}>${d.label}${d.ricarica?' (ricarica)':''}</option>`; }).join('')}
+        </optgroup>
+        <optgroup label="Riepiloghi">
+          <option value="weekend1" ${groupId==='weekend1'?'selected':''}>📅 Weekend 1 — Totale</option>
+          <option value="weekend2" ${groupId==='weekend2'?'selected':''}>📅 Weekend 2 — Totale</option>
+          <option value="totale" ${groupId==='totale'?'selected':''}>🏁 Totale Evento</option>
+        </optgroup>
+      </select>
+    </div>
+    ${singleDay ? `<p style="color:var(--muted);font-size:12.5px;margin-top:-8px;">Finestra: ${singleDay.date.split('-').reverse().join('/')} dalle 18:00 alle 03:00 del giorno dopo.</p>` : `<p style="color:var(--muted);font-size:12.5px;margin-top:-8px;">${groupLabel(groupId)}: somma delle giornate incluse.</p>`}
+    <div class="summary-strip">
+      <div class="box"><b>${totalBottiglie}</b><span>Bottiglie vendute</span></div>
+      <div class="box"><b>${totalFusti}</b><span>Fusti finiti</span></div>
+      <div class="box"><b>${couponTotal}</b><span>Coupon venduti</span></div>
+    </div>
+    ${block('vino','🍷 Vino')}
+    ${block('birra','🍺 Birra')}
+  `;
+}
+
+function renderGestoreRiepilogo(){
+  const lowStock = [];
+  state.config.vino.forEach(function(c){
+    c.products.forEach(function(p){
+      const loaded = totalLoaded(c.id, p.id);
+      if(loaded<=0) return;
+      const finished = totalFinished(c.id, p.id);
+      lowStock.push({ casettaName:c.name, productName:p.name, residue: loaded-finished });
+    });
+  });
+  lowStock.sort(function(a,b){ return a.residue-b.residue; });
+  const top5 = lowStock.slice(0,5);
+
+  const lowStockHtml = top5.length ? `
+    <div class="lowstock-box">
+      <h3>⚠️ Vini con meno scorte</h3>
+      ${top5.map(function(r){ return `<div class="lowstock-row"><span>${escapeHtml(r.casettaName)} — ${escapeHtml(r.productName)}</span><b>${r.residue}</b></div>`; }).join('')}
+    </div>` : '';
+
+  function block(categoria, label){
+    const u = unitFor(categoria);
+    const rows = state.config[categoria].map(function(c){
+      const prodRows = c.products.map(function(p){
+        const loaded = totalLoaded(c.id, p.id);
+        const finished = totalFinished(c.id, p.id);
+        const residue = loaded - finished;
+        return `<tr>
+          <td>${escapeHtml(p.name)}</td>
+          <td>${loaded}</td>
+          <td>${finished}</td>
+          <td style="font-weight:700;color:${residue<=2 ? 'var(--red)':'var(--green)'}">${residue}</td>
+        </tr>`;
+      }).join('');
+      return `<div class="card">
+        <div class="casetta-block-title"><span>${escapeHtml(c.name)}</span></div>
+        <table>
+          <thead><tr><th>Prodotto</th><th>${u.plur.charAt(0).toUpperCase()+u.plur.slice(1)} caricati</th><th>${u.plur.charAt(0).toUpperCase()+u.plur.slice(1)} finiti</th><th>Residui</th></tr></thead>
+          <tbody>${prodRows}</tbody>
+        </table>
+      </div>`;
+    }).join('');
+    return `<h3 class="section-title" style="font-size:16px;">${label}</h3>${rows}`;
+  }
+
+  return `
+    ${lowStockHtml}
+    ${block('vino','🍷 Vino')}
+    ${block('birra','🍺 Birra')}
+  `;
+}
+
+function renderGestoreCoupon(){
+  const casette = allCasette();
+  let totalAll = 0;
+  const rows = casette.map(function(c){
+    const perDay = DAYS.map(function(d){
+      const entry = (state.coupons[c.id] && state.coupons[c.id][d.id]) || null;
+      if(entry) totalAll += entry.count;
+      return entry;
+    });
+    const total = perDay.reduce(function(sum,e){ return sum + (e?e.count:0); }, 0);
+    return `<div class="card">
+      <div class="casetta-block-title">
+        <span><span class="badge ${c.categoria}">${c.categoria}</span> ${escapeHtml(c.name)}</span>
+        <span style="font-weight:700;">${total} coupon totali</span>
+      </div>
+      <table>
+        <thead><tr><th>Serata</th><th>Coupon</th><th>Da</th><th>Quando</th></tr></thead>
+        <tbody>
+          ${DAYS.map(function(d,i){
+            const e = perDay[i];
+            return `<tr><td>${d.label}</td><td>${e?e.count:'—'}</td><td>${e?escapeHtml(e.person):'—'}</td><td>${e?fmtDateTime(e.ts):'—'}</td></tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }).join('');
+  return `
+    <div class="summary-strip"><div class="box"><b>${totalAll}</b><span>Coupon totali evento</span></div></div>
+    ${rows}
+  `;
+}
+
+function renderGestoreLog(){
+  const cat = state.ui.logFilterCat;
+  const cid = state.ui.logFilterCasetta;
+  let entries = state.log.slice().sort(function(a,b){ return b.ts-a.ts; });
+  if(cat !== 'all') entries = entries.filter(function(e){ return e.categoria===cat; });
+  if(cid !== 'all') entries = entries.filter(function(e){ return e.casettaId===cid; });
+  const casetteForFilter = cat==='all' ? allCasette() : allCasette().filter(function(c){ return c.categoria===cat; });
+  return `
+    <div class="filters">
+      <select id="log-filter-cat">
+        <option value="all" ${cat==='all'?'selected':''}>Tutte le categorie</option>
+        <option value="vino" ${cat==='vino'?'selected':''}>Vino</option>
+        <option value="birra" ${cat==='birra'?'selected':''}>Birra</option>
+      </select>
+      <select id="log-filter-casetta">
+        <option value="all" ${cid==='all'?'selected':''}>Tutte le casette</option>
+        ${casetteForFilter.map(function(c){ return `<option value="${c.id}" ${cid===c.id?'selected':''}>${escapeHtml(c.name)}</option>`; }).join('')}
+      </select>
+    </div>
+    <div class="card" style="padding:0;overflow-x:auto;">
+      <table>
+        <thead><tr><th>Data/Ora</th><th>Casetta</th><th>Prodotto</th><th>Persona</th></tr></thead>
+        <tbody>
+          ${entries.length ? entries.map(function(e){
+            return `<tr>
+              <td>${fmtDateTime(e.ts)}</td>
+              <td><span class="badge ${e.categoria}">${e.categoria}</span> ${escapeHtml(e.casettaName)}</td>
+              <td>${escapeHtml(e.productName)}</td>
+              <td>${escapeHtml(e.person)}</td>
+            </tr>`;
+          }).join('') : `<tr><td colspan="4" class="empty-note">Nessuna bottiglia registrata ancora.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+/* =========================================================================
+   AZIONI
+   ========================================================================= */
+async function handleAction(action, target){
+  const ui = state.ui;
+  switch(action){
+    case 'go-home': state.screen='home'; ui.loginError=''; render(); break;
+
+    case 'go-casetta-login': state.screen='casetta_login'; ui.loginError=''; render(); break;
+    case 'submit-casetta-login': {
+      const pw = document.getElementById('input-casetta-pw').value;
+      const name = document.getElementById('input-casetta-name').value.trim();
+      if(pw !== PW_CASETTA){ ui.loginError = 'Password errata.'; render(); return; }
+      if(!name){ ui.loginError = 'Inserisci il tuo nome.'; render(); return; }
+      ui.loginError=''; ui.tempName = name;
+      state.screen='casetta_category'; render();
+      break;
+    }
+    case 'go-casetta-category': state.screen='casetta_category'; render(); break;
+    case 'pick-cat': {
+      ui.catChoice = target.dataset.cat;
+      state.screen = 'casetta_select'; render();
+      break;
+    }
+    case 'pick-casetta': {
+      const casettaId = target.dataset.id;
+      const session = { name: ui.tempName, categoria: ui.catChoice, casettaId: casettaId, loginTs: Date.now() };
+      state.casettaSession = session;
+      saveLocalSession(session);
+      state.screen = 'casetta_view'; render();
+      break;
+    }
+    case 'ask-finish': ui.confirmProductId = target.dataset.pid; render(); break;
+    case 'cancel-finish': ui.confirmProductId = null; render(); break;
+    case 'confirm-finish': {
+      const pid = target.dataset.pid;
+      const s = state.casettaSession;
+      const casetta = findCasetta(s.categoria, s.casettaId);
+      const product = casetta.products.find(function(p){ return p.id===pid; });
+      state.log.push({
+        id: 'e'+Date.now()+Math.random().toString(36).slice(2,7),
+        categoria: s.categoria, casettaId: casetta.id, casettaName: casetta.name,
+        productId: pid, productName: product.name, person: s.name, ts: Date.now()
+      });
+      await saveLog(state.log);
+      ui.confirmProductId = null;
+      render();
+      break;
+    }
+    case 'go-coupon': state.screen='casetta_coupon'; render(); break;
+    case 'go-casetta-view-back': state.screen='casetta_view'; render(); break;
+    case 'save-coupon': {
+      const dayId = document.getElementById('coupon-day-select').value;
+      const countVal = parseInt(document.getElementById('coupon-count-input').value, 10);
+      if(isNaN(countVal) || countVal < 0){ return; }
+      const s = state.casettaSession;
+      if(!state.coupons[s.casettaId]) state.coupons[s.casettaId] = {};
+      state.coupons[s.casettaId][dayId] = { count: countVal, person: s.name, ts: Date.now() };
+      await saveCoupons(state.coupons);
+      ui.couponDay = dayId;
+      state.screen = 'casetta_view';
+      render();
+      break;
+    }
+    case 'logout-casetta': {
+      clearLocalSession();
+      state.casettaSession = null;
+      state.screen = 'home';
+      render();
+      break;
+    }
+
+    case 'go-gestore-login': state.screen='gestore_login'; ui.loginError=''; render(); break;
+    case 'submit-gestore-login': {
+      const pw = document.getElementById('input-gestore-pw').value;
+      if(pw !== PW_GESTORE){ ui.loginError = 'Password errata.'; render(); return; }
+      ui.loginError='';
+      state.gestoreAuthed = true;
+      state.screen = 'gestore_menu';
+      render();
+      break;
+    }
+    case 'logout-gestore': state.gestoreAuthed=false; state.screen='home'; render(); break;
+    case 'go-gestore-menu': state.screen='gestore_menu'; render(); break;
+    case 'go-gestore-section': state.screen = 'gestore_' + target.dataset.section; render(); break;
+
+    case 'add-product': {
+      const cat = target.dataset.cat, cid = target.dataset.cid;
+      const casetta = state.config[cat].find(function(c){ return c.id===cid; });
+      const newId = cid+'_p'+(Date.now()%100000);
+      casetta.products.push({ id:newId, name:'Nuovo prodotto' });
+      await saveConfig(state.config);
+      render();
+      break;
+    }
+    case 'remove-product': {
+      const cat = target.dataset.cat, cid = target.dataset.cid, pid = target.dataset.pid;
+      const casetta = state.config[cat].find(function(c){ return c.id===cid; });
+      casetta.products = casetta.products.filter(function(p){ return p.id!==pid; });
+      await saveConfig(state.config);
+      render();
+      break;
+    }
+    case 'add-load': {
+      const cid = target.dataset.cid, dayId = target.dataset.day;
+      const casetta = allCasette().find(function(c){ return c.id===cid; });
+      if(!state.loads[cid]) state.loads[cid] = {};
+      if(!state.loads[cid][dayId]) state.loads[cid][dayId] = {};
+      let anyAdded = false;
+      casetta.products.forEach(function(p){
+        const el = document.getElementById('load-add-'+p.id);
+        const val = parseInt(el.value, 10);
+        if(!isNaN(val) && val > 0){
+          state.loads[cid][dayId][p.id] = (state.loads[cid][dayId][p.id] || 0) + val;
+          state.loadsLog.push({
+            id: 'l'+Date.now()+Math.random().toString(36).slice(2,6),
+            casettaId: cid, casettaName: casetta.name, categoria: casetta.categoria,
+            dayId: dayId, productId: p.id, productName: p.name, qty: val, ts: Date.now()
+          });
+          anyAdded = true;
+        }
+      });
+      if(anyAdded){
+        await saveLoads(state.loads);
+        await saveLoadsLog(state.loadsLog);
+      }
+      render();
+      break;
+    }
+  }
+}
+
+function handleChangeAction(target){
+  const ui = state.ui;
+  if(target.id === 'load-casetta-select'){ ui.loadCasettaId = target.value; render(); }
+  else if(target.id === 'load-day-select'){ ui.loadDayId = target.value; render(); }
+  else if(target.id === 'giorno-day-select'){ ui.giornoGroupId = target.value; render(); }
+  else if(target.id === 'log-filter-cat'){ ui.logFilterCat = target.value; ui.logFilterCasetta='all'; render(); }
+  else if(target.id === 'log-filter-casetta'){ ui.logFilterCasetta = target.value; render(); }
+}
+
+async function handleBlurEdit(target){
+  const action = target.dataset.action;
+  if(action === 'edit-casetta-name'){
+    const cat = target.dataset.cat, id = target.dataset.id;
+    const casetta = state.config[cat].find(function(c){ return c.id===id; });
+    casetta.name = target.value.trim() || casetta.name;
+    await saveConfig(state.config);
+  }
+  if(action === 'edit-product-name'){
+    const cat = target.dataset.cat, cid = target.dataset.cid, pid = target.dataset.pid;
+    const casetta = state.config[cat].find(function(c){ return c.id===cid; });
+    const product = casetta.products.find(function(p){ return p.id===pid; });
+    product.name = target.value.trim() || product.name;
+    await saveConfig(state.config);
+  }
+}
+
+app.addEventListener('click', function(e){
+  const target = e.target.closest('[data-action]');
+  if(!target) return;
+  handleAction(target.dataset.action, target);
+});
+app.addEventListener('change', function(e){
+  handleChangeAction(e.target);
+});
+app.addEventListener('focusout', function(e){
+  const target = e.target;
+  if(target.dataset && (target.dataset.action === 'edit-casetta-name' || target.dataset.action === 'edit-product-name')){
+    handleBlurEdit(target);
+  }
+});
+
+/* =========================================================================
+   INIT
+   ========================================================================= */
+async function init(){
+  if(!storageConfigured()){
+    render();
+    return;
+  }
+  state.config = await getConfig();
+  state.loads = await getLoads();
+  state.loadsLog = await getLoadsLog();
+  state.log = await getLog();
+  state.coupons = await getCoupons();
+
+  const session = getLocalSession();
+  if(session){
+    const ageMs = Date.now() - session.loginTs;
+    const stillValid = ageMs < SESSION_HOURS * 60 * 60 * 1000;
+    const casettaExists = findCasetta(session.categoria, session.casettaId);
+    if(stillValid && casettaExists){
+      state.casettaSession = session;
+      state.screen = 'casetta_view';
+      render();
+      return;
+    } else {
+      clearLocalSession();
+    }
+  }
+  state.screen = 'home';
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
