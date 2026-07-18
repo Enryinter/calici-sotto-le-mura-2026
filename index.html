@@ -178,6 +178,12 @@
   .ricarica-tag{background:var(--gold);color:#fff;font-size:10.5px;padding:2px 8px;border-radius:20px;margin-left:8px;font-weight:700;}
   .summary-strip{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
   .summary-grid-2x2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+  .summary-grid-2x2 .box{
+    aspect-ratio:1/1;background:var(--paper);border:1px solid var(--border);border-radius:14px;
+    padding:14px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  }
+  .summary-grid-2x2 .box span{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:700;}
+  .summary-grid-2x2 .box b{font-size:30px;font-family:'Fraunces',serif;color:var(--wine-dark);line-height:1;}
   .summary-strip .box{flex:1;min-width:100px;background:var(--paper);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;}
   .summary-strip .box b{display:block;font-size:22px;font-family:'Fraunces',serif;color:var(--wine-dark);}
   .summary-strip .box span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
@@ -796,10 +802,10 @@ function renderGestoreVenditeGiorno(){
     </div>
     ${singleDay ? `<p style="color:var(--muted);font-size:12.5px;margin-top:-8px;">Finestra: ${singleDay.date.split('-').reverse().join('/')} dalle 18:00 alle 03:00 del giorno dopo.</p>` : `<p style="color:var(--muted);font-size:12.5px;margin-top:-8px;">${groupLabel(groupId)}: somma delle giornate incluse.</p>`}
     <div class="summary-grid-2x2">
-      <div class="box"><b>${totalBottiglie}</b><span>Bottiglie finite</span></div>
-      <div class="box"><b>${totalFusti}</b><span>Fusti finiti</span></div>
-      <div class="box"><b>€ ${totalCost.toFixed(2)}</b><span>Costo Totale</span></div>
-      <div class="box"><b>${couponTotal}</b><span>Coupon venduti</span></div>
+      <div class="box"><span>Bottiglie finite</span><b>${totalBottiglie}</b></div>
+      <div class="box"><span>Fusti finiti</span><b>${totalFusti}</b></div>
+      <div class="box"><span>Costo Totale</span><b>€ ${Math.round(totalCost)}</b></div>
+      <div class="box"><span>Coupon venduti</span><b>${couponTotal}</b></div>
     </div>
     ${block('vino','🍷 Vino')}
     ${block('birra','🍺 Birra')}
@@ -1316,6 +1322,20 @@ function pickRandom(arr){ return arr[randInt(0, arr.length-1)]; }
 async function generateSimulation(){
   const simDays = ['w1v','w1s','w1d'];
   const casette = allCasette();
+
+  // Se un prodotto non ha un costo impostato (o è 0), assegnane uno casuale sotto i 20€
+  let costsChanged = false;
+  casette.forEach(function(c){
+    c.products.forEach(function(p){
+      const cost = parseFloat(p.cost);
+      if(!cost || cost <= 0){
+        p.cost = Math.round((Math.random() * 18.5 + 1.5) * 100) / 100; // tra 1.50€ e 20.00€
+        costsChanged = true;
+      }
+    });
+  });
+  if(costsChanged) await saveConfig(state.config);
+
   const newLoads = {};
   const newLoadsLog = [];
   const newLog = [];
