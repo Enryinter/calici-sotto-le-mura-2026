@@ -157,7 +157,8 @@
   .card{background:var(--paper);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;}
   .casetta-block-title{font-weight:700;font-size:14px;color:var(--wine-dark);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
   .prod-edit-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
-  .prod-edit-row input{flex:1;padding:9px 10px;border-radius:8px;border:1px solid var(--border);font-size:14px;}
+  .prod-edit-row .prod-name-input{flex:1;padding:9px 10px;border-radius:8px;border:1px solid var(--border);font-size:14px;}
+  .prod-edit-row .prod-cost-input{width:64px;flex:none;padding:9px 6px;border-radius:8px;border:1px solid var(--border);font-size:14px;text-align:center;}
   .icon-btn{background:var(--red-bg);color:var(--red);border:none;border-radius:8px;width:32px;height:32px;font-weight:700;flex-shrink:0;}
   .add-prod-btn{background:var(--green-bg);color:var(--green);border:none;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:700;}
 
@@ -176,6 +177,7 @@
   .empty-note{color:var(--muted);font-size:13.5px;text-align:center;padding:30px 10px;}
   .ricarica-tag{background:var(--gold);color:#fff;font-size:10.5px;padding:2px 8px;border-radius:20px;margin-left:8px;font-weight:700;}
   .summary-strip{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+  .summary-grid-2x2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
   .summary-strip .box{flex:1;min-width:100px;background:var(--paper);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;}
   .summary-strip .box b{display:block;font-size:22px;font-family:'Fraunces',serif;color:var(--wine-dark);}
   .summary-strip .box span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
@@ -272,8 +274,15 @@ async function storeGet(key){
     return (data && data.value != null) ? data.value : null;
   }catch(e){ console.error('storeGet error', e); return null; }
 }
-async function storeSet(key, value){
-  if(!storageConfigured()) return;
+const saveQueues = {};
+function storeSet(key, value){
+  if(!storageConfigured()) return Promise.resolve();
+  const prev = saveQueues[key] || Promise.resolve();
+  const next = prev.then(function(){ return doStoreSet(key, value); });
+  saveQueues[key] = next;
+  return next;
+}
+async function doStoreSet(key, value){
   const attempts = 3;
   for(let i=0;i<attempts;i++){
     try{
@@ -638,7 +647,8 @@ function renderGestoreConfig(){
           </div>
           ${c.products.map(function(p){
             return `<div class="prod-edit-row">
-              <input type="text" value="${escapeAttr(p.name)}" data-action="edit-product-name" data-cat="${categoria}" data-cid="${c.id}" data-pid="${p.id}">
+              <input type="text" class="prod-name-input" value="${escapeAttr(p.name)}" data-action="edit-product-name" data-cat="${categoria}" data-cid="${c.id}" data-pid="${p.id}">
+              <input type="number" step="0.01" min="0" class="prod-cost-input" value="${p.cost!=null && p.cost!=='' ? p.cost : ''}" placeholder="€" title="Costo bottiglia/fusto" data-action="edit-product-cost" data-cat="${categoria}" data-cid="${c.id}" data-pid="${p.id}">
               <button class="icon-btn" data-action="remove-product" data-cat="${categoria}" data-cid="${c.id}" data-pid="${p.id}" title="Rimuovi">✕</button>
             </div>`;
           }).join('')}
@@ -726,6 +736,12 @@ function renderGestoreVenditeGiorno(){
     });
   });
 
+  const costMap = {};
+  allCasette().forEach(function(c){
+    c.products.forEach(function(p){ costMap[p.id] = parseFloat(p.cost) || 0; });
+  });
+  const totalCost = entries.reduce(function(sum,e){ return sum + (costMap[e.productId] || 0); }, 0);
+
   function block(categoria, label){
     const u = unitFor(categoria);
     const cs = state.config[categoria];
@@ -737,9 +753,26 @@ function renderGestoreVenditeGiorno(){
       const casettaTotal = c.products.reduce(function(sum,p){
         return sum + entries.filter(function(e){ return e.casettaId===c.id && e.productId===p.id; }).length;
       }, 0);
-      if(casettaTotal===0) return `<div class="card"><div class="casetta-block-title"><span>${escapeHtml(c.name)}</span><span style="color:var(--muted);">0 ${u.plur}</span></div></div>`;
+      const casettaCost = c.products.reduce(function(sum,p){
+        const sold = entries.filter(function(e){ return e.casettaId===c.id && e.productId===p.id; }).length;
+        return sum + sold * (costMap[p.id] || 0);
+      }, 0);
+      const casettaCoupons = dayIds.reduce(function(sum,dId){
+        const e = state.coupons[c.id] && state.coupons[c.id][dId];
+        return sum + (e ? e.count : 0);
+      }, 0);
+      if(casettaTotal===0){
+        return `<div class="card">
+          <div class="casetta-block-title"><span>${escapeHtml(c.name)}</span><span style="color:var(--muted);">0 ${u.plur}</span></div>
+          ${casettaCoupons>0 ? `<div style="font-size:12.5px;color:var(--muted);">🎟️ ${casettaCoupons} coupon</div>` : ''}
+        </div>`;
+      }
       return `<div class="card">
         <div class="casetta-block-title"><span>${escapeHtml(c.name)}</span><span style="font-weight:700;">${casettaTotal} ${u.plur}</span></div>
+        <div style="display:flex;gap:16px;font-size:12.5px;color:var(--muted);margin:-6px 0 10px;">
+          <span>💶 <b style="color:var(--charcoal);">€ ${casettaCost.toFixed(2)}</b></span>
+          <span>🎟️ <b style="color:var(--charcoal);">${casettaCoupons}</b> coupon</span>
+        </div>
         <table><thead><tr><th>Prodotto</th><th>${u.plur.charAt(0).toUpperCase()+u.plur.slice(1)} ${u.soldLabel}</th></tr></thead>
         <tbody>${prodRows}</tbody></table>
       </div>`;
@@ -762,9 +795,10 @@ function renderGestoreVenditeGiorno(){
       </select>
     </div>
     ${singleDay ? `<p style="color:var(--muted);font-size:12.5px;margin-top:-8px;">Finestra: ${singleDay.date.split('-').reverse().join('/')} dalle 18:00 alle 03:00 del giorno dopo.</p>` : `<p style="color:var(--muted);font-size:12.5px;margin-top:-8px;">${groupLabel(groupId)}: somma delle giornate incluse.</p>`}
-    <div class="summary-strip">
-      <div class="box"><b>${totalBottiglie}</b><span>Bottiglie vendute</span></div>
+    <div class="summary-grid-2x2">
+      <div class="box"><b>${totalBottiglie}</b><span>Bottiglie finite</span></div>
       <div class="box"><b>${totalFusti}</b><span>Fusti finiti</span></div>
+      <div class="box"><b>€ ${totalCost.toFixed(2)}</b><span>Costo Totale</span></div>
       <div class="box"><b>${couponTotal}</b><span>Coupon venduti</span></div>
     </div>
     ${block('vino','🍷 Vino')}
@@ -1193,7 +1227,7 @@ async function handleAction(action, target){
       const cat = target.dataset.cat, cid = target.dataset.cid;
       const casetta = state.config[cat].find(function(c){ return c.id===cid; });
       const newId = cid+'_p'+(Date.now()%100000);
-      casetta.products.push({ id:newId, name:'Nuovo prodotto' });
+      casetta.products.push({ id:newId, name:'Nuovo prodotto', cost:0 });
       await saveConfig(state.config);
       render();
       break;
@@ -1260,6 +1294,14 @@ async function handleBlurEdit(target){
     const casetta = state.config[cat].find(function(c){ return c.id===cid; });
     const product = casetta.products.find(function(p){ return p.id===pid; });
     product.name = target.value.trim() || product.name;
+    await saveConfig(state.config);
+  }
+  if(action === 'edit-product-cost'){
+    const cat = target.dataset.cat, cid = target.dataset.cid, pid = target.dataset.pid;
+    const casetta = state.config[cat].find(function(c){ return c.id===cid; });
+    const product = casetta.products.find(function(p){ return p.id===pid; });
+    const val = parseFloat(target.value);
+    product.cost = isNaN(val) ? 0 : val;
     await saveConfig(state.config);
   }
 }
@@ -1365,7 +1407,7 @@ app.addEventListener('change', function(e){
 });
 app.addEventListener('focusout', function(e){
   const target = e.target;
-  if(target.dataset && (target.dataset.action === 'edit-casetta-name' || target.dataset.action === 'edit-product-name')){
+  if(target.dataset && (target.dataset.action === 'edit-casetta-name' || target.dataset.action === 'edit-product-name' || target.dataset.action === 'edit-product-cost')){
     handleBlurEdit(target);
   }
 });
@@ -1396,7 +1438,12 @@ const UNSAFE_AUTOREFRESH_SCREENS = ['casetta_login','gestore_login','casetta_cat
 async function refreshSharedData(force){
   if(!storageConfigured()) return;
   try{
-    const cfg = await getConfig();
+    // Mentre siamo nella schermata "Casette & Prodotti", i nomi si salvano già
+    // immediatamente appena si esce dal campo: evitiamo di ri-scaricare il config
+    // per non rischiare di sovrascrivere in schermo un salvataggio appena fatto
+    // (che potrebbe non essere ancora arrivato al server).
+    const onConfigScreen = state.screen === 'gestore_config';
+    const cfg = onConfigScreen ? state.config : await getConfig();
     const ld = await getLoads();
     const ll = await getLoadsLog();
     const lg = await getLog();
