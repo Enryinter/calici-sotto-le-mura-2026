@@ -158,7 +158,12 @@
   .casetta-block-title{font-weight:700;font-size:14px;color:var(--wine-dark);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
   .prod-edit-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
   .prod-edit-row .prod-name-input{flex:1;padding:9px 10px;border-radius:8px;border:1px solid var(--border);font-size:14px;}
-  .prod-edit-row .prod-cost-input{width:64px;flex:none;padding:9px 6px;border-radius:8px;border:1px solid var(--border);font-size:14px;text-align:center;}
+  .prod-edit-row .prod-cost-input{width:60px;flex:none;padding:9px 6px;border-radius:8px;border:1px solid var(--border);font-size:14px;text-align:center;}
+  .prod-edit-row .prod-coupon-input{width:60px;flex:none;padding:9px 6px;border-radius:8px;border:1px solid var(--border);font-size:14px;text-align:center;}
+  .prod-header-row{display:flex;gap:8px;align-items:center;margin-bottom:4px;}
+  .prod-header-row .prod-header-name{flex:1;}
+  .prod-header-row .prod-header-mini{width:60px;flex:none;text-align:center;font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;}
+  .prod-header-row .prod-header-spacer{width:32px;flex:none;}
   .icon-btn{background:var(--red-bg);color:var(--red);border:none;border-radius:8px;width:32px;height:32px;font-weight:700;flex-shrink:0;}
   .add-prod-btn{background:var(--green-bg);color:var(--green);border:none;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:700;}
 
@@ -452,6 +457,7 @@ function render(){
     case 'casetta_category': html = renderCasettaCategory(); break;
     case 'casetta_select': html = renderCasettaSelect(); break;
     case 'casetta_view': html = renderCasettaView(); break;
+    case 'casetta_log': html = renderCasettaLog(); break;
     case 'gestore_login': html = renderGestoreLogin(); break;
     case 'gestore_menu': html = renderGestoreMenu(); break;
     case 'gestore_config': html = wrapGestoreSection('🏷️ Casette & Prodotti', renderGestoreConfig()); break;
@@ -556,7 +562,7 @@ function renderCasettaView(){
     return `
     <div class="product-card">
       <div>
-        <p class="pname">${escapeHtml(p.name)}</p>
+        <p class="pname">${escapeHtml(p.name)} - ${p.coupons!=null && p.coupons!=='' ? p.coupons : 0} coupon</p>
         <div class="stats">
           <span>Finiti&nbsp;<b>${finished}</b></span>
           <span class="stat-residue ${residueClass}">Residui&nbsp;<b>${loaded===0 ? '—' : residue}</b></span>
@@ -588,6 +594,35 @@ function renderCasettaView(){
   </div>
   <div class="content">
     ${rows}
+    <button class="coupon-link" data-action="go-casetta-log">🗑️ Annulla inserimento</button>
+  </div>`;
+}
+
+function renderCasettaLog(){
+  const s = state.casettaSession;
+  const casetta = findCasetta(s.categoria, s.casettaId);
+  const confirmingId = state.ui.confirmDeleteLogId;
+  const entries = state.log
+    .filter(function(e){ return e.casettaId===casetta.id; })
+    .sort(function(a,b){ return b.ts-a.ts; });
+  return `
+  <div class="topbar">
+    <div><div class="tb-title">🗑️ Annulla inserimento</div><div class="tb-sub">${escapeHtml(casetta.name)}</div></div>
+    <button data-action="go-casetta-view-back">Chiudi</button>
+  </div>
+  <div class="content">
+    ${entries.length ? entries.map(function(e){
+      const isConfirming = confirmingId === e.id;
+      return `<div class="product-card">
+        <div>
+          <p class="pname" style="font-size:15px;">${escapeHtml(e.productName)}</p>
+          <div class="stats"><span>${escapeHtml(e.person)} · ${fmtDateTime(e.ts)}</span></div>
+        </div>
+        ${isConfirming
+          ? `<div style="display:flex;gap:6px;"><button class="btn-sm btn-outline" data-action="cancel-delete-log">No</button><button class="btn-sm btn-danger" data-action="confirm-delete-log" data-id="${e.id}">Sì, elimina</button></div>`
+          : `<button class="icon-btn" data-action="ask-delete-log" data-id="${e.id}" title="Elimina questo inserimento">🗑</button>`}
+      </div>`;
+    }).join('') : `<p class="empty-note">Nessun inserimento da questa casetta.</p>`}
   </div>`;
 }
 
@@ -658,10 +693,17 @@ function renderGestoreConfig(){
               style="border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-weight:700;font-size:14px;width:60%;">
             <span style="color:var(--muted);font-size:12px;">${c.products.length} prodotti</span>
           </div>
+          <div class="prod-header-row">
+            <span class="prod-header-name"></span>
+            <span class="prod-header-mini">Costo</span>
+            <span class="prod-header-mini">Coupon</span>
+            <span class="prod-header-spacer"></span>
+          </div>
           ${c.products.map(function(p){
             return `<div class="prod-edit-row">
               <input type="text" class="prod-name-input" value="${escapeAttr(p.name)}" data-action="edit-product-name" data-cat="${categoria}" data-cid="${c.id}" data-pid="${p.id}">
               <input type="number" step="0.01" min="0" class="prod-cost-input" value="${p.cost!=null && p.cost!=='' ? p.cost : ''}" placeholder="€" title="Costo bottiglia/fusto" data-action="edit-product-cost" data-cat="${categoria}" data-cid="${c.id}" data-pid="${p.id}">
+              <input type="number" step="1" min="0" class="prod-coupon-input" value="${p.coupons!=null && p.coupons!=='' ? p.coupons : ''}" placeholder="#" title="Coupon necessari" data-action="edit-product-coupons" data-cat="${categoria}" data-cid="${c.id}" data-pid="${p.id}">
               <button class="icon-btn" data-action="remove-product" data-cat="${categoria}" data-cid="${c.id}" data-pid="${p.id}" title="Rimuovi">✕</button>
             </div>`;
           }).join('')}
@@ -1185,6 +1227,8 @@ async function handleAction(action, target){
       render();
       break;
     }
+    case 'go-casetta-log': state.screen='casetta_log'; render(); break;
+    case 'go-casetta-view-back': state.screen='casetta_view'; render(); break;
     case 'logout-casetta': {
       clearLocalSession();
       state.casettaSession = null;
@@ -1263,7 +1307,7 @@ async function handleAction(action, target){
       const cat = target.dataset.cat, cid = target.dataset.cid;
       const casetta = state.config[cat].find(function(c){ return c.id===cid; });
       const newId = cid+'_p'+(Date.now()%100000);
-      casetta.products.push({ id:newId, name:'Nuovo prodotto', cost:0 });
+      casetta.products.push({ id:newId, name:'Nuovo prodotto', cost:0, coupons:0 });
       await saveConfig(state.config);
       render();
       break;
@@ -1340,6 +1384,14 @@ async function handleBlurEdit(target){
     const product = casetta.products.find(function(p){ return p.id===pid; });
     const val = parseFloat(target.value);
     product.cost = isNaN(val) ? 0 : val;
+    await saveConfig(state.config);
+  }
+  if(action === 'edit-product-coupons'){
+    const cat = target.dataset.cat, cid = target.dataset.cid, pid = target.dataset.pid;
+    const casetta = state.config[cat].find(function(c){ return c.id===cid; });
+    const product = casetta.products.find(function(p){ return p.id===pid; });
+    const val = parseInt(target.value, 10);
+    product.coupons = isNaN(val) ? 0 : val;
     await saveConfig(state.config);
   }
 }
@@ -1485,7 +1537,7 @@ app.addEventListener('change', function(e){
 });
 app.addEventListener('focusout', function(e){
   const target = e.target;
-  if(target.dataset && (target.dataset.action === 'edit-casetta-name' || target.dataset.action === 'edit-product-name' || target.dataset.action === 'edit-product-cost')){
+  if(target.dataset && (target.dataset.action === 'edit-casetta-name' || target.dataset.action === 'edit-product-name' || target.dataset.action === 'edit-product-cost' || target.dataset.action === 'edit-product-coupons')){
     handleBlurEdit(target);
   }
 });
